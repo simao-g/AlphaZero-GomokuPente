@@ -1,0 +1,43 @@
+import sys, os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+import numpy as np
+from mcts.mcts_pure import MCTSGomoku, MCTSPente
+from games.pente import Pente
+from games.gomoku import Gomoku
+
+class Player:
+
+    def __init__(self, rules="gomoku", board_size=15, n_playout=25, c_puct=1.4):
+        
+        self.rules = rules.lower()
+        self.board_size = board_size
+        self.n_playout = n_playout
+
+        # escolher o MCTS / heurísticas mais adequadas conforme o tipo de jogo que for
+        if (self.rules == "gomoku"):
+            self.mcts = MCTSGomoku(n_playout=n_playout, c_puct=c_puct)
+        else:
+            self.mcts = MCTSPente(n_playout=n_playout, c_puct=c_puct)
+
+    def play(self, board, turn_number, last_opponent_move):
+
+        # importa o jogo correto
+        if self.rules == "pente":
+            game = Pente(size=self.board_size)
+        else:
+            game = Gomoku(size=self.board_size)
+
+        # copia o estado atual do tabuleiro
+        if isinstance(board, list):
+            game.board = np.array(board, dtype=int)
+        else:
+            game.board = np.copy(board.board)
+
+        # define jogador atual
+        game.current_player = 1 if turn_number % 2 == 0 else 2
+        game.last_move = last_opponent_move
+
+        # procura a melhor jogada via MCTS
+        move = self.mcts.get_move(game)
+        return move
